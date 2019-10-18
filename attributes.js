@@ -1,7 +1,11 @@
 "use strict";
 var xlinkNS = 'http://www.w3.org/1999/xlink';
 var xmlNS = 'http://www.w3.org/XML/1998/namespace';
+
+// unicode对应冒号(:)
 var colonChar = 58;
+
+// unicode对应字符(X)
 var xChar = 120;
 function updateAttrs(oldVnode, vnode) {
     var key, elm = vnode.elm, oldAttrs = oldVnode.data.attrs, attrs = vnode.data.attrs;
@@ -16,22 +20,24 @@ function updateAttrs(oldVnode, vnode) {
         var cur = attrs[key];
         var old = oldAttrs[key];
         if (old !== cur) {
+            // 设置没有值得那种属性
             if (cur === true) {
                 elm.setAttribute(key, "");
             }
             else if (cur === false) {
                 elm.removeAttribute(key);
             }
+            // 判断，如果第一个字符是x，第四个字符是：，那么可能是xml属性；第六个字符是：，可能是xlink，否则是个普通属性
             else {
                 if (key.charCodeAt(0) !== xChar) {
                     elm.setAttribute(key, cur);
                 }
                 else if (key.charCodeAt(3) === colonChar) {
-                    // Assume xml namespace
+                    // Assume xml namespace（假设是xml）
                     elm.setAttributeNS(xmlNS, key, cur);
                 }
                 else if (key.charCodeAt(5) === colonChar) {
-                    // Assume xlink namespace
+                    // Assume xlink namespace(假设是xlink)
                     elm.setAttributeNS(xlinkNS, key, cur);
                 }
                 else {

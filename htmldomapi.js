@@ -44,7 +44,7 @@ function isText(node) {
 function isComment(node) {
     return node.nodeType === 8;
 }
-var htmlDomApi = {
+var htmldomapi_1 = {
     createElement: createElement,
     createElementNS: createElementNS,
     createTextNode: createTextNode,
