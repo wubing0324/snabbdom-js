@@ -14,8 +14,9 @@ function isUndef(s) { return s === undefined; }
 function isDef(s) { return s !== undefined; }
 var emptyNode = vnode_1('', {}, [], undefined, undefined);
 
-// 问题1：同一个节点，key和sel相同，但是只是其中的文本发生变化算是相等吗？
+// 问题1：同一个节点，key和sel相同，但是只是其中的文本发生变化算是相等吗？也是不同的，因为每次都是通过data生成了新的vnode
 function sameVnode(vnode1, vnode2) {
+    debugger
     return vnode1.key === vnode2.key && vnode1.sel === vnode2.sel;
 }
 function isVnode(vnode) {
@@ -37,7 +38,6 @@ function createKeyToOldIdx(children, beginIdx, endIdx) {
 }
 var hooks = ['create', 'update', 'remove', 'destroy', 'pre', 'post'];
 function init(modules, domApi) {
-  debugger
     var i, j, cbs = {};
     var api = domApi !== undefined ? domApi : htmldomapi_1;
 
@@ -109,7 +109,7 @@ function init(modules, domApi) {
                 elm.setAttribute('class', sel.slice(dot + 1).replace(/\./g, ' '));
             for (i = 0; i < cbs.create.length; ++i)
 
-            // 调用create方法---------------具体做了什么还没看
+            // 调用create方法，根据oldVnode和vnode的差异新增或删除对应的dom元素的class，attributes，props和listeners
                 cbs.create[i](emptyNode, vnode);
 
             // 如果该vnode有子节点，循环子节点递归调用createElm方法，创建所有子元素，否则如果当前vnode没有子节点并且text不为空，创建文本节点并追加到elm
