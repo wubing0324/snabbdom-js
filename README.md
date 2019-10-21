@@ -5,6 +5,7 @@ snabbdom的原生js版本，snabbdom地址：https://github.com/snabbdom/snabbdo
 snabbdom封装了一套从数据映射到dom的方法。优点（1.对比差异渲染dom，无需重新渲染整个dom；2.不需要多次封装data到dom的方法）
 
 我们在用jquery渲染一个列表的时候，会自己封装一个方法，去映射数据和dom，可能是这样的：
+```
 var data = [1,2,3,4]
 
 function updateDom(data){
@@ -16,6 +17,7 @@ function updateDom(data){
   var ul = jquery.('ul').append(jquery.html(str))
   jquery.('body').append(ul)
 }
+```
 然后，当data更新时，调用updateDom(data)，更新dom，而且只要有一点点变化，我们都要删除原来的dom，重新添加。这样其实不难，但是当页面有大量这样的数据的时候，我们要频繁的操作dom，有人也许会用fragment片段来优化dom节点的插入删除，有人也许创建一个<li></li>就更新一次dom，导致页面频繁渲染（dom的回流和重绘），导致页面卡顿。 我们也许会封装很多类似updateDom这样的方法，去映射数据和dom之间的关系，一旦数据发生变化，调用方法就好了，但是我们每次都要费心费力去封装这样的方法，不同的人封装的还不一样，逻辑简单，可能就不封装了。snabbdom解决了这样的问题，他相当于一个封装好的updateDom的究极版。
 
 snabbdom解决了这一问题，我们不再需要自己去做dom的插入删除操作，只要按照一定的格式，把数据和标签组合在一起，做一次初始化，就可以了。我们只需要关心数据的变化，每当数据变化，调用一下更新的方法（patch），snabbdom会帮我们去更新dom，而且，他会对比然后只去更新需要更新的地方，不会因为增加一个li而删除整个ul然后重绘。那么，snabbdom是如何实现从数据到dom这一操作的呢？
