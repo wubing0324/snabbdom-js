@@ -100,7 +100,7 @@ sameVnode判断新老vnode是否是同一个节点,是的话调用patchVnode更�
       }
   }
   ```
-  最后，我们要注意insertedVnodeQueue，再一次patch过程中，所有新增的vnode都会存储在这里，然后遍历，调用每个新节点的insert钩子函数。
+  最后，我们要注意insertedVnodeQueue，在一次patch过程中，所有新增的vnode都会存储在这里，然后遍历，调用每个新节点的insert钩子函数。
 
 snabbdom中有两种方法，一种是cbs中的方法，是内部使用，用来更新当前vnode对用dom的class、attributes、style等属性的，在snabbdom.init方法中，会生成一个cbs对象，它是方法的集合。一类是data.hook中用户自定义的钩子函数，在某些固定的时机触发，和vue的mounted等钩子函数是一样的。
 
@@ -130,6 +130,7 @@ else if (oldVnode.text !== vnode.text) {
 
 我们只考虑没有key的情况，有key的情况是类似的。注意一点，sameVnode(oldStartVnode, newEndVnode)和sameVnode(oldEndVnode, newStartVnode)这两种情况，我们只在odlCh中移动节点的位置即可。
 
+
 比较(sameVnode(oldEndVnode, newEndVnode);oEnd--;nEnd--;结果如图2)：
 ```
    oldVnode                                    newVnode
@@ -137,62 +138,74 @@ else if (oldVnode.text !== vnode.text) {
 oStrat               oEnd                |   nStart                        nEnd
   |                   |                  |    |                             |
   A    B    C    D    E                  |    C    G    A    B    D    F    E
-                                图一
 
+                                图一
+```
 比较(isUndef(idxInOld); nStart++;结果如图3)：
+```
    oldVnode                                    newVnode
                                   
 oStrat          oEnd                     |  nStart                    nEnd
   |              |                       |    |                        |
   A    B    C    D    E                  |    C    G    A    B    D    F    E
-                                图二
 
+                                图二
+```
 比较(isUndef(idxInOld); nStart++;结果如图4)：
-                                  
+```                       
      oStrat         oEnd                 |        nStart                nEnd
        |             |                   |          |                    |
   C    A    B    C   D   E               |    C     G    A    B    D     F    E
+ 
                                 图三
-
+```
 比较(sameVnode(oldStartVnode, newStartVnode);oStrat++;nStart++;结果如图5)：
-                                  
+ ```                                 
           oStrat         oEnd            |                 nStart                nEnd
             |             |              |                   |                    |
   C    G    A    B   C    D    E         |    C       G      A      B      D      F        E
+            
                                 图四
-
+```
 比较(sameVnode(oldStartVnode, newStartVnode);oStrat++;nStart++;结果如图6)：
-                                  
+```                                 
               oStrat     oEnd             |                      nStart          nEnd
                  |        |               |                         |             |
   C    G    A    B   C    D    E          |   C       G      A      B      D      F        E
+                   
                                 图五
+```
 比较(sameVnode(oldEndVnode, newStartVnode);oEnd--;nStart++;结果如图7)：
-                                  
+```                                  
                    oStrat  oEnd           |                             nStart    nEnd
                       |    |              |                                |      |
   C    G    A    B    C    D    E         |   C       G      A      B      D      F        E
+         
                                 图六
-
+```
 比较(isUndef(idxInOld); nStart++;结果如图8)：
-                               
+```                               
                     oStrat oEnd           |                                  nStart nEnd
                           ||              |                                       ||
   C    G    A    B    D    C    E         |   C       G      A      B      D      F        E
+        
                                 图七
-
+```
 比较(跳出whilew循环;oldStartIdx <= oldEndIdx || newStartIdx <= newEndIdx，循环删除oldCh中多余的节点，如图9)：
-                   
+```                   
                          oStrat oEnd                                          nEnd      nStart  
                                ||                                                |        |
   C    G    A    B    D    F    C     E   |   C       G      A      B      D     F       E
+    
                                  图八     
-
+```
 比较结果：
+```
                                           |
                                           |                                   nEnd      nStart  
                                           |                                      |        |
   C    G    A    B    D    F    E         |  C       G      A      B      D      F        E
+                          
                                   图九
 
 ```
