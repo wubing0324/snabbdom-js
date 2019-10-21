@@ -278,9 +278,9 @@ function init(modules, domApi) {
             }
         }
     }
-    //比较新旧vnode时，只需要向dom中添加、移动或者删除dom即可，新的vnode就是我们需要保存的当前的vnode，下次他就成了老vnode（第一轮newVnodes就是下一轮的oldVnodes）
-    //比较vnodes是从父节点层层向下，创建dom是从子节点向上
-    // patchVnode做了三件事：1.更新当前节点对应dom的属性（class、listeners、props、style...），2.调用vnode.data.hook中的update函数。3.比较新旧vnode的子节点
+    //  比较新旧vnode时，只需要向dom中添加、移动或者删除dom即可，新的vnode就是我们需要保存的当前的vnode，下次他就成了老vnode（第一轮newVnodes就是下一轮的oldVnodes）
+    //  比较vnodes是从父节点层层向下，创建dom是从子节点向上
+    //  patchVnode做了三件事：1.更新当前节点对应dom的属性（class、listeners、props、style...），2.调用vnode.data.hook中的update函数。3.比较新旧vnode的子节点
     function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
         var i, hook;
         if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
