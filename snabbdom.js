@@ -41,7 +41,7 @@ function init(modules, domApi) {
     var i, j, cbs = {};
     var api = domApi !== undefined ? domApi : htmldomapi_1;
 
-    //module中的方法是每个vnode转化为dom时必须要执行的，也就是数据转化为对应的样式，类和事件，不同于每个vnode中hook里面自己定义的钩子函数，可有可无，node中hook里面自己定义的钩子函数是让调用者在某个时机做一些事情用的，类似vue的生命周期钩子
+    //module中的方法是每个vnode转化为dom时必须要执行的，也就是数据转化为对应的样式，类和事件，不同于每个vnode中hook里面自己定义的钩子函数，可有可无，vNode中hook里面自己定义的钩子函数是让调用者在某个时机做一些事情用的，类似vue的生命周期钩子
     for (i = 0; i < hooks.length; ++i) {
         cbs[hooks[i]] = [];
         for (j = 0; j < modules.length; ++j) {
@@ -65,6 +65,7 @@ function init(modules, domApi) {
             }
         };
     }
+    // 创建vnode对应的dom元素，并将其插入父级dom
     function createElm(vnode, insertedVnodeQueue) {
         var i, data = vnode.data;
         if (data !== undefined) {
@@ -190,6 +191,7 @@ function init(modules, domApi) {
             }
         }
     }
+    // 遍历比较两子节点数组中的元素，相同，则patchVnode，不同，则向父级dom中删除或添加dom子元素
     function updateChildren(parentElm, oldCh, newCh, insertedVnodeQueue) {
         var oldStartIdx = 0, newStartIdx = 0;
         var oldEndIdx = oldCh.length - 1;
@@ -251,7 +253,7 @@ function init(modules, domApi) {
                 }
                 else {
                     elmToMove = oldCh[idxInOld];
-                    // ch和oldCh中有相同的key，但是sel不同时，删除老节点，拿新节点创建dom追加到oldStartVnode的前面
+                    // ch和oldCh中有相同的key，但是sel不同时，拿新节点创建dom追加到oldStartVnode对应的dom前面。elmToMove这个节点会在比较过程结束后删除
                     if (elmToMove.sel !== newStartVnode.sel) {
                         api.insertBefore(parentElm, createElm(newStartVnode, insertedVnodeQueue), oldStartVnode.elm);
                     }
@@ -278,6 +280,7 @@ function init(modules, domApi) {
     }
     //比较新旧vnode时，只需要向dom中添加、移动或者删除dom即可，新的vnode就是我们需要保存的当前的vnode，下次他就成了老vnode（第一轮newVnodes就是下一轮的oldVnodes）
     //比较vnodes是从父节点层层向下，创建dom是从子节点向上
+    // patchVnode做了三件事：1.更新当前节点对应dom的属性（class、listeners、props、style...），2.调用vnode.data.hook中的update函数。3.比较新旧vnode的子节点
     function patchVnode(oldVnode, vnode, insertedVnodeQueue) {
         var i, hook;
         if (isDef(i = vnode.data) && isDef(hook = i.hook) && isDef(i = hook.prepatch)) {
@@ -290,7 +293,9 @@ function init(modules, domApi) {
             return;
         if (vnode.data !== undefined) {
             for (i = 0; i < cbs.update.length; ++i)
+                // cbs.update是一个数组，其中包括更新class、props、listeners、attributes等属性的更新方法
                 cbs.update[i](oldVnode, vnode);
+            // 调用钩子函数
             i = vnode.data.hook;
             if (isDef(i) && isDef(i = i.update))
                 i(oldVnode, vnode);
@@ -330,12 +335,16 @@ function init(modules, domApi) {
         var insertedVnodeQueue = [];
         for (i = 0; i < cbs.pre.length; ++i)
             cbs.pre[i]();
+        // 场景：第一次拿dom元素初始化的时候 -> patch(document.getElementById('container'), vnode);
+        // dom不是vnode，于是拿dom新建一个vnode
         if (!isVnode(oldVnode)) {
             oldVnode = emptyNodeAt(oldVnode);
         }
+        // 如果当前的节点相同，那么更新他们对应的dom的属性，并且比较他们的子节点
         if (sameVnode(oldVnode, vnode)) {
             patchVnode(oldVnode, vnode, insertedVnodeQueue);
         }
+        // 不同，则添加新节点并删除老节点
         else {
             elm = oldVnode.elm;
             parent = api.parentNode(elm);
