@@ -18,7 +18,7 @@ function updateDom(data){
   jquery.('body').append(ul)
 }
 ```
-然后，当data更新时，调用updateDom(data)，更新dom，而且只要有一点点变化，我们都要删除原来的dom，重新添加。这样其实不难，但是当页面有大量这样的数据的时候，我们要频繁的操作dom，有人也许会用fragment片段来优化dom节点的插入删除，有人也许创建一个<li></li>就更新一次dom，导致页面频繁渲染（dom的回流和重绘），导致页面卡顿。 我们也许会封装很多类似updateDom这样的方法，去映射数据和dom之间的关系，一旦数据发生变化，调用方法就好了，但是我们每次都要费心费力去封装这样的方法，不同的人封装的还不一样，逻辑简单，可能就不封装了。snabbdom解决了这样的问题，他相当于一个封装好的updateDom的究极版。
+然后，当data更新时，调用updateDom(data)，更新dom，而且只要有一点点变化，我们都要删除原来的dom，重新添加。这样其实不难，但是当页面有大量这样的数据的时候，我们要频繁的操作dom，有人也许会用fragment片段来优化dom节点的插入删除，有人也许创建一个```<li></li>```就更新一次dom，导致页面频繁渲染（dom的回流和重绘），导致页面卡顿。 我们也许会封装很多类似updateDom这样的方法，去映射数据和dom之间的关系，一旦数据发生变化，调用方法就好了，但是我们每次都要费心费力去封装这样的方法，不同的人封装的还不一样，逻辑简单，可能就不封装了。snabbdom解决了这样的问题，他相当于一个封装好的updateDom的究极版。
 
 snabbdom解决了这一问题，我们不再需要自己去做dom的插入删除操作，只要按照一定的格式，把数据和标签组合在一起，做一次初始化，就可以了。我们只需要关心数据的变化，每当数据变化，调用一下更新的方法（patch），snabbdom会帮我们去更新dom，而且，他会对比然后只去更新需要更新的地方，不会因为增加一个li而删除整个ul然后重绘。那么，snabbdom是如何实现从数据到dom这一操作的呢？
 
@@ -78,15 +78,16 @@ var newVnode = {
 var patch = snabbdom.init(modules){}，初始化snabbdom，返回patch方法，调用patch方法传入oldVnode和vnode，最后更新dom，modules参数是更新当前节点对应dom的class、props、styles等属性的方法。最后会存在cbs对象中，然后在不同的时机以vnode为参数调用cbs中的方法，更新dom属性
 
 4.执行patch方法
-（1）判断vnode类型
 
-oldVnode是dom元素，也就是第一次初始化，用dom元素创建vnode，例如：patch(document.getElementById('container'), vnode)
+(1)判断vnode类型
+
+oldVnode是dom元素，也就是第一次初始化，用dom元素创建vnode，例如：```patch(document.getElementById('container'), vnode)```
   ```
   if (!isVnode(oldVnode)) {
     oldVnode = emptyNodeAt(oldVnode);
   }
   ```
-(2)比较oldVnode和vnode是否相同，在比较他们的子级vnode是否相同，然后更新dom。
+(2)比较oldVnode和vnode是否相同，再比较他们的子级vnode是否相同，然后更新dom。
 sameVnode判断新老vnode是否是同一个节点,是的话调用patchVnode更新当前节点对应dom的属性，并比较他们的子节点。关键就在patchVnode方法了，我们最后来讲。不是同一个节点，直接用心vnode新建dom元素，然后删除老节点对应的dom元素
   ```
   if (sameVnode(oldVnode, vnode)) {
@@ -104,13 +105,13 @@ sameVnode判断新老vnode是否是同一个节点,是的话调用patchVnode更�
   ```
   最后，我们要注意insertedVnodeQueue，在一次patch过程中，所有新增的vnode都会存储在这里，然后遍历，调用每个新节点的insert钩子函数。
 
-snabbdom中有两种方法，一种是cbs中的方法，是内部使用，用来更新当前vnode对用dom的class、attributes、style等属性的，在snabbdom.init方法中，会生成一个cbs对象，它是方法的集合。一类是data.hook中用户自定义的钩子函数，在某些固定的时机触发，和vue的mounted等钩子函数是一样的。
+snabbdom中有两种方法，一种是cbs中的方法，是内部使用，用来更新当前vnode对用dom的class、attributes、style等属性的，在snabbdom.init(modules)方法中，根据modules，会生成一个cbs对象，它是方法的集合。一类是data.hook中用户自定义的钩子函数，在某些固定的时机触发，和vue的mounted等钩子函数是一样的。
 
 
+(3)调用patchVnode(只有当前的oldVnode和vnode是同一节点，才会调用patchVnode)
+```
 patchVnode(oldVnode, vnode, insertedVnodeQueue);
-
-只有当前的oldVnode和vnode是同一节点，才会调用patchVnode
-
+```
 patchVnode调用cbs.update方法集更新当前vnode对应的dom属性，同时调用用户在data中自定义的钩子函数，然后调用updateChildren比较新老vnode的子节点。
 就这样patchVnode和updateChildren互相调用，遍历了整个虚拟dom树。
 patchVnode中，文本节点和子节点是互斥的，如果是文本节点，那么删除vnode的子节点,直接：api.setTextContent(elm, vnode.text)，修改当前dom的文本即可。
@@ -213,17 +214,31 @@ oStrat          oEnd                     |  nStart                    nEnd
 ```
 
 
+在比较过程中，当sameVnode(oldEndVnode, newEndVnode)返回true时，会再次调用patchVnode，然后又去比较这两个节点的子节点。
+
+```
+oldVnode = h('a.btn.title', {class: {active: true}, on: {click: [changeSort, 'title']}}, 'oldText')  ---->根据数据(data)生成vnode节点。
+        |
+        |
+        |
+vnode = h('a.btn.title', {class: {active: false}, on: {click: []}}, 'newText')  ---->更新后的数据(data)生成vnode节点。
+        |
+        |
+        |
+patch(oldVnode, vnode)
+        |
+        |   sameVnode(oldVnode, vnode) === true
+        |
+patchVnode(oldVnode, vnode) ---->调用hook.prepatch钩子函数，调用cbs.update更新class等属性更新点前vnode节点对应dom，调用hook.update钩子函数。
+        |
+        |   isDef(oldCh) && isDef(ch) && (oldCh !== ch) ----> 新老vnode都有子节点且不相等，比较子节点。
+        |
+updateChildren(oldVnode.children, vnode.children) ----> 有相同节点，继续比较。无相同节点后，调用addVnodes/removeVnodes新增或删除对应的dom元素并更新事件或属性，当前层级比较结束，回去比较父级节点的下。
+        |   true                                             这里可以看出，sameVnode(oldVnode, vnode) === true 的节点，属性和事件是在patchVnode中更新的，而不同的节点则是在updateChildren中更新的。
+        |<--------- sameVnode(oldVnode.children[i], vnode.children[j]) === true ---->false  当前层级比较结束，回到上层方法。
+        |
+patchVnode(oldVnode.children[i], vnode.children[j])
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+```
+现在写的稍微有点乱，未完待续。。。。
